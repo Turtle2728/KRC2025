@@ -4,10 +4,13 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 
@@ -15,13 +18,29 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 
 public class KRC2025 extends LinearOpMode {
+
+    private DcMotorEx AL;
+    private DcMotorEx AA;
+
+    private Servo gripper;
+    private Servo wristL;
+    private Servo wristR;
+
     @Override
 
     public void runOpMode () throws InterruptedException {
-        DcMotor leftFront = hardwareMap.dcMotor.get("LeftFront");
+        DcMotor leftFront = hardwareMap.dcMotor.get("leftFront");
         DcMotor leftBack = hardwareMap.dcMotor.get("leftBack");
         DcMotor rightFront = hardwareMap.dcMotor.get("rightFront");
         DcMotor rightBack = hardwareMap.dcMotor.get("rightBack");
+
+        AL = hardwareMap.get(DcMotorEx.class,"AL"); //arm lengh
+        AA = hardwareMap.get(DcMotorEx.class,"AA"); //arm angle
+
+        gripper = hardwareMap.servo.get("gripper");
+        wristL = hardwareMap.servo.get("wristL");
+        wristR = hardwareMap.servo.get("wristR");
+
 
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
