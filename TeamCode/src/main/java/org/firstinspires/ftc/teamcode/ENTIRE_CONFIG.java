@@ -19,7 +19,7 @@ public class ENTIRE_CONFIG extends OpMode{
     public static double POS_wristL = 0;
     public static double POS_wristR = 0;
 
-    public static double POS_gripper = 0;
+    public static double POS_gripper = 0.2;
     //public static double POS_H_angleR = 0.5;
 
 
@@ -54,6 +54,8 @@ public class ENTIRE_CONFIG extends OpMode{
         wristL.setPosition(POS_wristL);
         wristR.setPosition(POS_wristR);
         gripper.setPosition(POS_gripper);
+
+        wristL.setDirection(Servo.Direction.REVERSE);
 
         telemetry.update();
     }

@@ -20,7 +20,7 @@ public class pid_tuining extends OpMode{
 
     public static int target_AA = 0;
 
-    private final double ticks_in_degree_AA = 700 / 180.0;
+    private final double ticks_in_degree_AA = 800 / 180.0;
 
 
     private PIDController controller_AL;

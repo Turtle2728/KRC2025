@@ -44,6 +44,7 @@ public class KRC2025 extends LinearOpMode {
         AL.setDirection(DcMotorSimple.Direction.REVERSE);
         AA.setDirection(DcMotorSimple.Direction.REVERSE);
 
+
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
@@ -53,6 +54,8 @@ public class KRC2025 extends LinearOpMode {
         gripper = hardwareMap.servo.get("gripper");
         wristL = hardwareMap.servo.get("wristL");
         wristR = hardwareMap.servo.get("wristR");
+
+        wristL.setDirection(Servo.Direction.REVERSE);
 
         Gamepad currentGamepad1 = new Gamepad();
         Gamepad currentGamepad2 = new Gamepad();
@@ -66,6 +69,12 @@ public class KRC2025 extends LinearOpMode {
 
         int targetLengh = 0;
         int targetAngle = 0;
+        int currentLengh = 0;
+        int currentAngle = 0;
+
+        gripper.setPosition(0.1);
+        wristL.setPosition(0.22);
+        wristR.setPosition(0.22);
 
         if (isStopRequested()) return;
 
@@ -115,24 +124,60 @@ public class KRC2025 extends LinearOpMode {
 
             //구조물 안의 기물 잡을 준비
             if (gamepad1.y) {
+                targetAngle = 100;
+                AA.setTargetPosition(targetAngle);
+                AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AA.setPower(0.5);
+                currentAngle = AA.getCurrentPosition();
+                targetLengh = 200;
+                AL.setTargetPosition(targetLengh);
+                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AL.setPower(0.5);
+                currentLengh = AL.getCurrentPosition();
+                wristL.setPosition(0.5);
+                wristR.setPosition(0.5);
             }
 
-            //구조물 안의 기물 잡기
-            if (gamepad1.a) {
+            //구조물 안의 기물 잡기 / 손목 수평
+            if (gamepad1.x) {
+                wristL.setPosition(0.75);
+                wristR.setPosition(0.75);
             }
 
             //준비
-            if (gamepad1.x) {
+            if (gamepad1.a) {
+                wristL.setPosition(0.22);
+                wristR.setPosition(0.22);
+                targetLengh = 0;
+                AL.setTargetPosition(targetLengh);
+                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AL.setPower(0.5);
+                currentLengh = AL.getCurrentPosition();
+                targetAngle = 0;
+                AA.setTargetPosition(targetAngle);
+                AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AA.setPower(0.5);
+                currentAngle = AA.getCurrentPosition();
             }
 
-            //걸려있는 기물 잡기
+            //구조물 안의 기물 잡기 / 손목 수직
             if (gamepad1.b) {
+                wristL.setPosition(0.9);
+                wristR.setPosition(0.6);
             }
 
             //2층 체임버 높이
             if (gamepad1.dpad_left) {
-                targetLengh = 450;
+                targetLengh = 100;
                 AL.setTargetPosition(targetLengh);
+                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AL.setPower(0.5);
+                currentLengh = AL.getCurrentPosition();
+                targetAngle = 50;
+                AA.setTargetPosition(targetAngle);
+                AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AA.setPower(0.5);
+                currentAngle = AA.getCurrentPosition();
             }
 
             //1층 체임버 높이
@@ -141,6 +186,11 @@ public class KRC2025 extends LinearOpMode {
 
             //2층 바구니 높이
             if (gamepad1.dpad_up) {
+                targetAngle = 400;
+                AA.setTargetPosition(targetLengh);
+                AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AA.setPower(0.5);
+
             }
 
             //1층 바구니 높이
@@ -149,24 +199,61 @@ public class KRC2025 extends LinearOpMode {
 
             //팔 길이 확장
             if (gamepad2.x) {
+                targetLengh = currentLengh + 50;
+                AL.setTargetPosition(targetLengh);
+                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AL.setPower(0.5);
+                currentLengh = AL.getCurrentPosition();
             }
 
             //팔 길이 축소
-            if (gamepad2.y) {
-            }
-
-            //손목
-            if (gamepad2.a) {
-            }
-
             if (gamepad2.b) {
+                if (targetLengh > 10) {
+                    targetLengh = currentLengh - 50;
+                    AL.setTargetPosition(targetLengh);
+                    AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    AL.setPower(0.5);
+                    currentLengh = AL.getCurrentPosition();
+                } else {
+                    targetLengh = 10;
+                    AL.setTargetPosition(targetLengh);
+                    AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    AL.setPower(0.5);
+                    currentLengh = AL.getCurrentPosition();
+                }
+            }
+
+            //팔 각도 올리기
+            if (gamepad2.y) {
+                targetAngle = currentAngle + 50;
+                AA.setTargetPosition(targetAngle);
+                AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AA.setPower(0.5);
+                currentAngle = AA.getCurrentPosition();
+            }
+
+            //팔 각도 내리기
+            if (gamepad2.a) {
+                if (targetAngle > 10) {
+                    targetAngle = currentAngle - 50;
+                    AA.setTargetPosition(targetAngle);
+                    AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    AA.setPower(0.5);
+                    currentAngle = AA.getCurrentPosition();
+                } else {
+                    targetAngle = 10;
+                    AA.setTargetPosition(targetAngle);
+                    AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    AA.setPower(0.5);
+                    currentAngle = AA.getCurrentPosition();
+                }
             }
 
             telemetry.addData("gripper", gripper.getPosition());
             telemetry.addData("wristL", wristL.getPosition());
             telemetry.addData("wristR",wristR.getPosition());
-            telemetry.addData("ArmLengh", ArmLengh);
-            telemetry.addData("ArmAngle", ArmAngle);
+            telemetry.addData("ArmLengh", currentLengh);
+            telemetry.addData("ArmAngle", currentAngle);
             telemetry.update();
 
         }
