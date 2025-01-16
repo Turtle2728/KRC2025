@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -22,22 +24,12 @@ public class KRC2025 extends LinearOpMode {
 
     private com.arcrobotics.ftclib.controller.PIDController controller_AA;
 
-    public static double p_AA = 0, i_AA = 0, d_AA = 0;
-    public static double f_AA = 0;
+    public static double p_AA = 0.005, i_AA = 0, d_AA = 0.0002;
+    public static double f_AA = 0.28;
 
     public static int target_AA = 0;
 
     private final double ticks_in_degree_AA = 800 / 180.0;
-
-
-    private com.arcrobotics.ftclib.controller.PIDController controller_AL;
-
-    public static double p_AL = 0, i_AL = 0, d_AL = 0;
-    public static double f_AL = 0;
-
-    public static int target_AL = 0;
-
-    private final double ticks_in_degree_AL = 700 / 180.0;
 
 
     private DcMotorEx AL;
@@ -51,6 +43,16 @@ public class KRC2025 extends LinearOpMode {
     @Override
 
     public void runOpMode () throws InterruptedException {
+
+        controller_AA = new PIDController(p_AA, i_AA, d_AA);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+        AL = hardwareMap.get(DcMotorEx.class, "AL");
+        AA = hardwareMap.get(DcMotorEx.class, "AA");
+
+        AL.setDirection(DcMotorSimple.Direction.REVERSE);
+        AA.setDirection(DcMotorSimple.Direction.REVERSE);
+
         DcMotor leftFront = hardwareMap.dcMotor.get("leftFront");
         DcMotor leftBack = hardwareMap.dcMotor.get("leftBack");
         DcMotor rightFront = hardwareMap.dcMotor.get("rightFront");
@@ -58,13 +60,6 @@ public class KRC2025 extends LinearOpMode {
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        AL = hardwareMap.get(DcMotorEx.class,"AL"); //arm lengh
-        AA = hardwareMap.get(DcMotorEx.class,"AA"); //arm angle
-
-        AL.setDirection(DcMotorSimple.Direction.REVERSE);
-        AA.setDirection(DcMotorSimple.Direction.REVERSE);
-
 
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
@@ -89,9 +84,7 @@ public class KRC2025 extends LinearOpMode {
         waitForStart();
 
         int targetLengh = 0;
-        int targetAngle = 0;
         int currentLengh = 0;
-        int currentAngle = 0;
 
         double WlPosion = 0;
         double WrPosion = 0;
@@ -102,12 +95,20 @@ public class KRC2025 extends LinearOpMode {
         wristR.setPosition(0.22);
 
 
-        if (isStopRequested()) return;
+
 
         while (opModeIsActive()) {
 
-            int ArmLengh = AL.getCurrentPosition();
-            int ArmAngle = AA.getCurrentPosition();
+            if (isStopRequested()) return;
+
+            controller_AA.setPID(p_AA, i_AA, d_AA);
+            int armPos_AA = AA.getCurrentPosition();
+            double pid_AA = controller_AA.calculate(armPos_AA, target_AA);
+            double ff_AA = Math.cos(Math.toRadians(armPos_AA / ticks_in_degree_AA)) * f_AA;
+
+            double power_AA = pid_AA + ff_AA;
+
+            AA.setPower(power_AA);
 
             previousGamepad1.copy(currentGamepad1);
             previousGamepad2.copy(currentGamepad2);
@@ -199,27 +200,21 @@ public class KRC2025 extends LinearOpMode {
 
             //팔 각도 올리기
             if (gamepad1.dpad_left) {
-                targetAngle = currentAngle + 100;
-                AA.setTargetPosition(targetAngle);
-                AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                target_AA = armPos_AA + 100;
+                AA.setTargetPosition(target_AA);
                 AA.setPower(0.5);
-                currentAngle = AA.getCurrentPosition();
             }
 
             //팔 각도 내리기
             if (gamepad1.dpad_right) {
-                if (targetAngle > 10) {
-                    targetAngle = currentAngle - 100;
-                    AA.setTargetPosition(targetAngle);
-                    AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                if (target_AA > 10) {
+                    target_AA = armPos_AA - 100;
+                    AA.setTargetPosition(target_AA);
                     AA.setPower(0.5);
-                    currentAngle = AA.getCurrentPosition();
                 } else {
-                    targetAngle = 10;
-                    AA.setTargetPosition(targetAngle);
-                    AA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    target_AA = 10;
+                    AA.setTargetPosition(target_AA);
                     AA.setPower(0.5);
-                    currentAngle = AA.getCurrentPosition();
                 }
             }
 
@@ -252,8 +247,8 @@ public class KRC2025 extends LinearOpMode {
             telemetry.addData("gripper", gripper.getPosition());
             telemetry.addData("wristL", wristL.getPosition());
             telemetry.addData("wristR",wristR.getPosition());
-            telemetry.addData("ArmLengh", currentLengh);
-            telemetry.addData("ArmAngle", currentAngle);
+            telemetry.addData("pos_AA ", armPos_AA);
+            telemetry.addData("pos_AL ", AL.getCurrentPosition());
             telemetry.update();
 
         }
