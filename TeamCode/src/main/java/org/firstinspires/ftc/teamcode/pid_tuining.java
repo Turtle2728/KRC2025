@@ -59,7 +59,7 @@ public class pid_tuining extends OpMode{
         controller_AA.setPID(p_AA, i_AA, d_AA);
         int armPos_AA = AA.getCurrentPosition();
         double pid_AA = controller_AA.calculate(armPos_AA, target_AA);
-        double ff_AA = Math.cos(Math.toRadians(target_AA / ticks_in_degree_AA)) * f_AA;
+        double ff_AA = Math.cos(Math.toRadians(armPos_AA / ticks_in_degree_AA)) * f_AA;
 
         double power_AA = pid_AA + ff_AA;
 
@@ -78,6 +78,8 @@ public class pid_tuining extends OpMode{
         telemetry.addData("pos_AL ", armPos_AL);
         telemetry.addData("target_AA ", target_AA);
         telemetry.addData("target_AL ", target_AL);
+        telemetry.addData("ff_AA", ff_AA);
+        telemetry.addData("ff_AL", ff_AL);
         telemetry.update();
     }
 }
