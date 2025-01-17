@@ -24,13 +24,21 @@ public class KRC2025 extends LinearOpMode {
 
     private com.arcrobotics.ftclib.controller.PIDController controller_AA;
 
-    public static double p_AA = 0.005, i_AA = 0, d_AA = 0.0002;
-    public static double f_AA = 0.28;
+    public static double p_AA = 0.006, i_AA = 0, d_AA = 0.0005; //초기값 0.005
+    public static double f_AA = 0.28;//초기값 0.28
 
     public static int target_AA = 0;
 
     private final double ticks_in_degree_AA = 800 / 180.0;
 
+    //하강시 PID
+    private com.arcrobotics.ftclib.controller.PIDController controller_AAD;
+
+    public static double p_AAD = 0.006, i_AAD = 0, d_AAD = 0.0002; //초기값 0.005
+    public static double f_AAD = 0.4;//초기값 0.28
+
+    private final double ticks_in_degree_AAD = 800 / 180.0;
+    //여기까지 하강 PID
 
     private DcMotorEx AL;
     private DcMotorEx AA;
@@ -45,6 +53,9 @@ public class KRC2025 extends LinearOpMode {
     public void runOpMode () throws InterruptedException {
 
         controller_AA = new PIDController(p_AA, i_AA, d_AA);
+        //하강PID
+        controller_AAD = new PIDController(p_AAD, i_AAD, d_AAD);
+
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         AL = hardwareMap.get(DcMotorEx.class, "AL");
@@ -83,6 +94,7 @@ public class KRC2025 extends LinearOpMode {
 
         waitForStart();
 
+        target_AA = 0;
         int targetLengh = 0;
         int currentLengh = 0;
 
@@ -95,6 +107,10 @@ public class KRC2025 extends LinearOpMode {
         wristR.setPosition(0.22);
 
 
+        AL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        AL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
 
 
         while (opModeIsActive()) {
@@ -103,8 +119,8 @@ public class KRC2025 extends LinearOpMode {
 
             controller_AA.setPID(p_AA, i_AA, d_AA);
             int armPos_AA = AA.getCurrentPosition();
-            double pid_AA = controller_AA.calculate(armPos_AA, target_AA);
-            double ff_AA = Math.cos(Math.toRadians(armPos_AA / ticks_in_degree_AA)) * f_AA;
+            double pid_AA = controller_AA.calculate(armPos_AA , target_AA);
+            double ff_AA = Math.cos(Math.toRadians(target_AA / ticks_in_degree_AA)) * f_AA;
 
             double power_AA = pid_AA + ff_AA;
 
@@ -202,7 +218,7 @@ public class KRC2025 extends LinearOpMode {
             if (gamepad1.dpad_left) {
                 target_AA = armPos_AA + 100;
                 AA.setTargetPosition(target_AA);
-                AA.setPower(0.5);
+                AA.setPower(power_AA);
             }
 
             //팔 각도 내리기
@@ -210,11 +226,11 @@ public class KRC2025 extends LinearOpMode {
                 if (target_AA > 10) {
                     target_AA = armPos_AA - 100;
                     AA.setTargetPosition(target_AA);
-                    AA.setPower(0.5);
+                    AA.setPower(power_AA);
                 } else {
                     target_AA = 10;
                     AA.setTargetPosition(target_AA);
-                    AA.setPower(0.5);
+                    AA.setPower(power_AA);
                 }
             }
 
@@ -244,11 +260,45 @@ public class KRC2025 extends LinearOpMode {
                 }
             }
 
+            if (gamepad2.y) {
+                target_AA = 450;
+                AA.setTargetPosition(target_AA);
+                //AA.setPower(power_AA);
+            }
+
+            if (gamepad2.a) {
+                    target_AA = 150;
+                    AA.setTargetPosition(target_AA);
+                    //AA.setPower(power_AA);
+                }
+            if (gamepad2.dpad_left){
+                target_AA = 0;
+                AA.setTargetPosition(target_AA);
+                AA.setPower(0);
+            }
+
+            if (gamepad2.x) {
+                targetLengh = 3200;
+                AL.setTargetPosition(targetLengh);
+                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AL.setPower(1);
+                currentLengh = AL.getCurrentPosition();
+            }
+
+            if (gamepad2.b) {
+                targetLengh = 0;
+                AL.setTargetPosition(targetLengh);
+                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AL.setPower(1);
+                currentLengh = AL.getCurrentPosition();
+            }
+
             telemetry.addData("gripper", gripper.getPosition());
             telemetry.addData("wristL", wristL.getPosition());
             telemetry.addData("wristR",wristR.getPosition());
             telemetry.addData("pos_AA ", armPos_AA);
             telemetry.addData("pos_AL ", AL.getCurrentPosition());
+            telemetry.addData("target_AA", target_AA);
             telemetry.update();
 
         }
