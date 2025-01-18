@@ -14,7 +14,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 
-@TeleOp (name = "KRC2025", group = "2025KRC OPMODE")
+@TeleOp (name = "2025KRC", group = "2025KRC OPMODE")
 
 
 public class ArmTest extends LinearOpMode {

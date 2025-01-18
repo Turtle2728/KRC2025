@@ -17,31 +17,37 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 
-@TeleOp (name = "KRC2025", group = "2025KRC OPMODE")
+@TeleOp (name = "2025KRC", group = "2025KRC OPMODE")
 
 
 public class KRC2025 extends LinearOpMode {
 
-    private com.arcrobotics.ftclib.controller.PIDController controller_AA;
+    private PIDController controller;
 
-    public static double p_AA = 0.006, i_AA = 0, d_AA = 0.0005; //초기값 0.005
-    public static double f_AA = 0.28;//초기값 0.28
+    public static double p = 0.01, i = 0, d = 0.0005; //초기값 0.005
+    public static double f = 0.2;//초기값 0.28
+    public static double maxSpeed = 0.9; // 최대 속도 제한
+    public static double maxAccel = 0.1; // 최대 가속도 제한
+    public static double sCurveRampRate = 0.04; // S-curve 변화율 (0 ~ 1)
+    private double currentTarget = 0; // 점진적으로 변경되는 목표값
+    private double previousPower = 0; // 이전 루프의 출력값 저장
 
-    public static int target_AA = 0;
+
+    public static int target = 0;
+
+    private final int targetUp = 420; // D패드 업 시 목표값
+    private final int targetDown = 50; // D패드 다운 시 목표값
+
+    private final int target0 = 0; // 팔 완전히 내리는 값
+
+    private final int targetC = 500; // 체임버에 기물 거는 높이
+    private final int targetG = 100; // 휴먼플레이어가 주는 기물 잡는 높이
 
     private final double ticks_in_degree_AA = 800 / 180.0;
 
-    //하강시 PID
-    private com.arcrobotics.ftclib.controller.PIDController controller_AAD;
-
-    public static double p_AAD = 0.006, i_AAD = 0, d_AAD = 0.0002; //초기값 0.005
-    public static double f_AAD = 0.4;//초기값 0.28
-
-    private final double ticks_in_degree_AAD = 800 / 180.0;
-    //여기까지 하강 PID
-
     private DcMotorEx AL;
-    private DcMotorEx AA;
+    private DcMotorEx AF;
+    private DcMotorEx AB;
 
     private Servo gripper;
     private Servo wristL;
@@ -52,17 +58,16 @@ public class KRC2025 extends LinearOpMode {
 
     public void runOpMode () throws InterruptedException {
 
-        controller_AA = new PIDController(p_AA, i_AA, d_AA);
-        //하강PID
-        controller_AAD = new PIDController(p_AAD, i_AAD, d_AAD);
+        controller = new PIDController(p, i, d);
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         AL = hardwareMap.get(DcMotorEx.class, "AL");
-        AA = hardwareMap.get(DcMotorEx.class, "AA");
+        AF = hardwareMap.get(DcMotorEx.class, "AF");
+        AB = hardwareMap.get(DcMotorEx.class, "AB");
 
         AL.setDirection(DcMotorSimple.Direction.REVERSE);
-        AA.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         DcMotor leftFront = hardwareMap.dcMotor.get("leftFront");
         DcMotor leftBack = hardwareMap.dcMotor.get("leftBack");
@@ -94,7 +99,6 @@ public class KRC2025 extends LinearOpMode {
 
         waitForStart();
 
-        target_AA = 0;
         int targetLengh = 0;
         int currentLengh = 0;
 
@@ -116,15 +120,6 @@ public class KRC2025 extends LinearOpMode {
         while (opModeIsActive()) {
 
             if (isStopRequested()) return;
-
-            controller_AA.setPID(p_AA, i_AA, d_AA);
-            int armPos_AA = AA.getCurrentPosition();
-            double pid_AA = controller_AA.calculate(armPos_AA , target_AA);
-            double ff_AA = Math.cos(Math.toRadians(target_AA / ticks_in_degree_AA)) * f_AA;
-
-            double power_AA = pid_AA + ff_AA;
-
-            AA.setPower(power_AA);
 
             previousGamepad1.copy(currentGamepad1);
             previousGamepad2.copy(currentGamepad2);
@@ -213,79 +208,39 @@ public class KRC2025 extends LinearOpMode {
                 wristR.setPosition(0.75);
             }
 
-
-            //팔 각도 올리기
             if (gamepad1.dpad_left) {
-                target_AA = armPos_AA + 100;
-                AA.setTargetPosition(target_AA);
-                AA.setPower(power_AA);
-            }
-
-            //팔 각도 내리기
-            if (gamepad1.dpad_right) {
-                if (target_AA > 10) {
-                    target_AA = armPos_AA - 100;
-                    AA.setTargetPosition(target_AA);
-                    AA.setPower(power_AA);
-                } else {
-                    target_AA = 10;
-                    AA.setTargetPosition(target_AA);
-                    AA.setPower(power_AA);
-                }
-            }
-
-            //팔 길이 늘리기
-            if (gamepad1.dpad_up) {
                 targetLengh = currentLengh + 100;
-                AL.setTargetPosition(targetLengh);
-                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                AL.setPower(0.5);
-                currentLengh = AL.getCurrentPosition();
-            }
-
-            //팔 길이 줄이기
-            if (gamepad1.dpad_down) {
-                if (targetLengh > 10) {
-                    targetLengh = currentLengh - 100;
-                    AL.setTargetPosition(targetLengh);
-                    AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    AL.setPower(0.5);
-                    currentLengh = AL.getCurrentPosition();
-                } else {
-                    targetLengh = 10;
-                    AL.setTargetPosition(targetLengh);
-                    AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    AL.setPower(0.5);
-                    currentLengh = AL.getCurrentPosition();
-                }
-            }
-
-            if (gamepad2.y) {
-                target_AA = 450;
-                AA.setTargetPosition(target_AA);
-                //AA.setPower(power_AA);
-            }
-
-            if (gamepad2.a) {
-                    target_AA = 150;
-                    AA.setTargetPosition(target_AA);
-                    //AA.setPower(power_AA);
-                }
-            if (gamepad2.dpad_left){
-                target_AA = 0;
-                AA.setTargetPosition(target_AA);
-                AA.setPower(0);
-            }
-
-            if (gamepad2.x) {
-                targetLengh = 3200;
                 AL.setTargetPosition(targetLengh);
                 AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 AL.setPower(1);
                 currentLengh = AL.getCurrentPosition();
             }
 
-            if (gamepad2.b) {
+            if (gamepad1.dpad_right) {
+                if (targetLengh>10) {
+                    targetLengh =currentLengh - 100;
+                    AL.setTargetPosition(targetLengh);
+                    AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    AL.setPower(1);
+                    currentLengh = AL.getCurrentPosition();
+                } else {
+                    targetLengh = 10;
+                    AL.setTargetPosition(targetLengh);
+                    AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    AL.setPower(1);
+                    currentLengh = AL.getCurrentPosition();
+                }
+            }
+
+            if (gamepad2.dpad_up) {
+                targetLengh = 3000;
+                AL.setTargetPosition(targetLengh);
+                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AL.setPower(1);
+                currentLengh = AL.getCurrentPosition();
+            }
+
+            if (gamepad2.dpad_down) {
                 targetLengh = 0;
                 AL.setTargetPosition(targetLengh);
                 AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -293,14 +248,72 @@ public class KRC2025 extends LinearOpMode {
                 currentLengh = AL.getCurrentPosition();
             }
 
+            if (gamepad2.dpad_left) {
+                targetLengh = 500;
+                AL.setTargetPosition(targetLengh);
+                AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                AL.setPower(1);
+                currentLengh = AL.getCurrentPosition();
+            }
+
+            if (gamepad2.dpad_right) {
+                targetLengh = 200;
+            }
+
+            if (gamepad2.y) {
+                target = targetUp;
+            } else if (gamepad2.a) {
+                target = targetDown;
+            }
+
+            if (gamepad2.x) {
+                target = targetG;
+            } else if (gamepad2.b) {
+                target = targetC;
+            }
+
+            if (gamepad2.right_bumper) {
+                target = target0;
+            }
+
+
+
+
+            double error = target - currentTarget;
+
+            double increment = sCurveRampRate * error;
+            if (Math.abs(increment)>Math.abs(error)) {
+                increment = error;
+            }
+            currentTarget += increment;
+
+            int armPos = AF.getCurrentPosition();
+            double pid = controller.calculate(armPos,currentTarget);
+            double ff = Math.cos(Math.toRadians(armPos/ticks_in_degree_AA)) * f;
+
+            double rawPower = pid + ff;
+            rawPower = Math.max(-maxSpeed, Math.min(maxSpeed,rawPower));
+
+            double powerChange = rawPower - previousPower;
+            if (Math.abs(powerChange)>maxAccel) {
+                powerChange = Math.signum(powerChange) * maxAccel;
+            }
+
+            double finalPower = previousPower + powerChange;
+            previousPower = finalPower;
+
+            AF.setPower(finalPower);
+            AB.setPower(finalPower);
+
             telemetry.addData("gripper", gripper.getPosition());
             telemetry.addData("wristL", wristL.getPosition());
             telemetry.addData("wristR",wristR.getPosition());
-            telemetry.addData("pos_AA ", armPos_AA);
             telemetry.addData("pos_AL ", AL.getCurrentPosition());
-            telemetry.addData("target_AA", target_AA);
+            telemetry.addData("Current Target", currentTarget);
+            telemetry.addData("Position", armPos);
+            telemetry.addData("Target", target);
+            telemetry.addData("Power", finalPower);
             telemetry.update();
-
         }
     }
     private void wrist_control(double L, double R) {
