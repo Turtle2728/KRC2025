@@ -124,18 +124,19 @@ public class AUTOTEST extends LinearOpMode {
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose) // 앞으로 이동하면서 팔을 들어올리고 그리퍼 회전
                 //  팔 길이를 늘리고 뒤로 이동 후 일정시간 뒤에 그리퍼 놓기
                 .stopAndAdd(()->gripper(0.08))
-                .stopAndAdd(()->AAadjust(1,150))
+                .stopAndAdd(()->AAadjust(1,120))
                 .waitSeconds(1)
                 .stopAndAdd(()->wrist(wristUP,wristUP))
                 .waitSeconds(1)
-                .lineToY(-36)
+                .lineToY(-30)
                 .waitSeconds(0.5)
-                .stopAndAdd(()->ALadjust(1,1400))
-                .waitSeconds(2)
+                .stopAndAdd(()->ALadjust(1,1600))
+                .waitSeconds(1)
                 .lineToY(-48)
                 .waitSeconds(2)
-                .stopAndAdd(()->gripper(0.31));
-
+                .stopAndAdd(()->gripper(0.31))
+                .waitSeconds(1)
+                .stopAndAdd(()->AAadjust(1,0));
 
         Action trajectoryActionCloseOut1 = tab1.fresh()
                 .build();
