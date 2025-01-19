@@ -37,8 +37,8 @@ public class KRC2025 extends LinearOpMode {
 
     private final int targetUp = 420; // D패드 업 시 목표값
     private final int targetDown = 0; // D패드 다운 시 목표값
-    private final int targetC = 600; // 체임버에 기물 거는 높이
-    private final int targetG = 100; // 휴먼플레이어가 주는 기물 잡는 높이
+    private final int targetCUP = 200; // 체임버에 기물 거는 높이
+    private final int targetCDown = 150; // 체임버에 기물 거는 높이
     private final int targetGUP = 300; // 걸린 기물 잡고 팔 올리는 값
     private final int LenghUP = 4000; // 2층 바구니로 팔 올리는 값
     private final double currentwristL = 0;
@@ -49,8 +49,9 @@ public class KRC2025 extends LinearOpMode {
     private final int LenghDown = 0; // 팔 길이 최소값
     private final int targetSUP = 80; //팔 각도 약간 올리는 값
     private final double wristDown = 0.75;
-    private final double wristUP = 0.22;
+    private final double wristUP = 0.28;
     private final double wristMiddle = 0.5;
+    private final double wristC = 0;
 
     private final double ticks_in_degree_AA = 800 / 180.0;
 
@@ -176,8 +177,6 @@ public class KRC2025 extends LinearOpMode {
                 wrist_control(wristL.getPosition(),wristR.getPosition());
             }
 
-
-
             //손목 반시계 방향으로 돌리기
             if (rising_edge(currentGamepad1.x, previousGamepad1.x)) {
                 WlPosion = wristL.getPosition() + interval;
@@ -217,6 +216,7 @@ public class KRC2025 extends LinearOpMode {
             //휴먼 플레이어가 준 기물 잡는 높이
             if (gamepad1.y) {
                 target = targetSUP;
+                wrist_control(0.78,0.22);
             }
 
 //pick up position
@@ -230,7 +230,7 @@ public class KRC2025 extends LinearOpMode {
                 wrist_control(wristMiddle,wristMiddle);
             }
 //deposit position
-                if (gamepad1.dpad_down) {
+                if (gamepad1.dpad_down && AF.getCurrentPosition()<200) {
                     targetLengh = LenghDown;
                     AL.setTargetPosition(targetLengh);
                     AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -245,7 +245,6 @@ public class KRC2025 extends LinearOpMode {
                 }
 
                 if (gamepad1.dpad_right) {
-                    target = targetG;
                 }
 
 // !!!!!!플레이어 2
@@ -253,7 +252,7 @@ public class KRC2025 extends LinearOpMode {
 //팔각도 최소
 
                 //팔길이 늘리기
-                if (gamepad2.dpad_up) {
+                if (gamepad2.dpad_left) {
                     targetLengh = currentLengh + 100;
                     AL.setTargetPosition(targetLengh);
                     AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -261,7 +260,7 @@ public class KRC2025 extends LinearOpMode {
                     currentLengh = AL.getCurrentPosition();
                 }
 //팔길이 줄이기
-                if (gamepad2.dpad_down) {
+                if (gamepad2.dpad_right) {
                     if (targetLengh > 10) {
                         targetLengh = currentLengh - 100;
                         AL.setTargetPosition(targetLengh);
@@ -278,39 +277,48 @@ public class KRC2025 extends LinearOpMode {
                 }
                 if (gamepad2.y) {
                     target = targetUp;
-                    wrist_control(wristUP,wristUP);
+                }
 
-                } else if (gamepad2.a & currentLengh < 500) {
+                if (gamepad2.right_stick_button) { // X 버튼을 눌렀을 때 엔코더 초기화
+                    resetEncoder(AF);
+                    target=0 ;
+                }
+
+                if (gamepad2.a && AL.getCurrentPosition()< 500) {
                     target = targetDown;
                     wristL.setPosition(wristMiddle);
                     wristR.setPosition(wristMiddle);
                 }
 
                 if (gamepad2.x) {
-                    targetLengh = LenghDown;
+                    target = targetCUP;
+                    wrist_control(wristUP,wristUP);
+                }
+
+                if (gamepad2.b) {
+                    targetLengh = 1400;
                     AL.setTargetPosition(targetLengh);
                     AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     AL.setPower(1);
-                } else if (gamepad2.b) {
-                    target = targetC;
-                    wristL.setPosition(0.25);
-                    wristR.setPosition(0.75);
+                    currentLengh = AL.getCurrentPosition();
                 }
 
-                if (gamepad2.dpad_left) {
+                if (gamepad2.dpad_up) {
                     targetLengh = LenghUP;
                     AL.setTargetPosition(targetLengh);
                     AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     AL.setPower(1);
+                    wrist_control(wristUP,wristUP);
                 }
 
-                if (gamepad2.dpad_right) {
+                if (gamepad2.dpad_down) {
                     targetLengh = LenghDown;
                     AL.setTargetPosition(targetLengh);
                     AL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     AL.setPower(1);
+                    wrist_control(wristMiddle,wristMiddle);
                 }
-
+                int armPos = AF.getCurrentPosition();
 
                 double error = target - currentTarget;
 
@@ -320,7 +328,6 @@ public class KRC2025 extends LinearOpMode {
                 }
                 currentTarget += increment;
 
-                int armPos = AF.getCurrentPosition();
                 double pid = controller.calculate(armPos, currentTarget);
                 double ff = Math.cos(Math.toRadians(armPos / ticks_in_degree_AA)) * f;
 
@@ -337,6 +344,14 @@ public class KRC2025 extends LinearOpMode {
 
                 AF.setPower(finalPower);
                 AB.setPower(finalPower);
+
+                if (gamepad2.left_bumper) {
+                    target = armPos -50;
+                }
+
+                if (gamepad2.right_bumper) {
+                    target = armPos +50;
+                }
 
                 telemetry.addData("gripper", gripper.getPosition());
                 telemetry.addData("wristL", wristL.getPosition());
@@ -357,6 +372,12 @@ public class KRC2025 extends LinearOpMode {
 
         private boolean rising_edge ( boolean currentButtonState, boolean previousButtonState){
             return currentButtonState && !previousButtonState;
+        }
+        private void resetEncoder(DcMotorEx motor) {
+        // 1. STOP_AND_RESET_ENCODER 모드 설정
+        AF.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // 2. RUN_USING_ENCODER 또는 RUN_WITHOUT_ENCODER로 다시 설정
+        AF.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
 
     }
