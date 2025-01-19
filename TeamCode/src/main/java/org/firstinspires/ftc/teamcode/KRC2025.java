@@ -42,8 +42,10 @@ public class KRC2025 extends LinearOpMode {
     private final int targetGUP = 300; // 걸린 기물 잡고 팔 올리는 값
     private final int LenghUP = 4000; // 2층 바구니로 팔 올리는 값
     private final int LenghDown = 0; // 팔 길이 최소값
-
     private final int targetSUP = 50; //팔 각도 약간 올리는 값
+    private final double wristDown = 0.75;
+    private final double wristUP = 0.22;
+    private final double wristMiddle = 0.5;
 
     private final double ticks_in_degree_AA = 800 / 180.0;
 
@@ -167,14 +169,14 @@ public class KRC2025 extends LinearOpMode {
             }
 
             if (gamepad1.left_bumper) {
-                wristL.setPosition(0.5);
-                wristR.setPosition(0.5);
+                wristL.setPosition(wristMiddle);
+                wristR.setPosition(wristMiddle);
             }
 
             //준비
             if (gamepad1.y) {
-                wristL.setPosition(0.22);
-                wristR.setPosition(0.22);
+                wristL.setPosition(wristUP);
+                wristR.setPosition(wristUP);
             }
 
             //손목 반시계 방향으로 돌리기
@@ -210,8 +212,8 @@ public class KRC2025 extends LinearOpMode {
 
             //구조물 안의 기물 잡기
             if (gamepad1.a) {
-                wristL.setPosition(0.75);
-                wristR.setPosition(0.75);
+                wristL.setPosition(wristDown);
+                wristR.setPosition(wristDown);
             }
 
             if (gamepad1.dpad_left) {
